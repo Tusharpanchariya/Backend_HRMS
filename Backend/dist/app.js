@@ -1,0 +1,51 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+// File: src/app.ts
+const express_1 = __importDefault(require("express"));
+const cors_1 = __importDefault(require("cors"));
+const dotenv_1 = __importDefault(require("dotenv"));
+const Profile_route_1 = __importDefault(require("./routes/Profile.route"));
+const Auth_route_1 = __importDefault(require("./routes/Auth.route"));
+const Company_route_1 = __importDefault(require("./routes/Company.route"));
+const Department_route_1 = __importDefault(require("./routes/Department.route"));
+const State_route_1 = __importDefault(require("./routes/State.route"));
+const Employe_route_1 = __importDefault(require("./routes/Employe.route"));
+const Attendance_route_1 = __importDefault(require("./routes/Attendance.route"));
+const Leave_route_1 = __importDefault(require("./routes/Leave.route"));
+const Payroll_route_1 = __importDefault(require("./routes/Payroll.route"));
+const Training_route_1 = __importDefault(require("./routes/Training.route"));
+const Project_route_1 = __importDefault(require("./routes/Project.route"));
+const timeEntries_routes_1 = __importDefault(require("./routes/timeEntries.routes"));
+const Dashboard_route_1 = __importDefault(require("./routes/Dashboard.route"));
+const AttendancePolicyRoutes_1 = __importDefault(require("./routes/AttendancePolicyRoutes"));
+const ExportAttendance_route_1 = __importDefault(require("./routes/ExportAttendance.route"));
+const path_1 = __importDefault(require("path"));
+dotenv_1.default.config();
+const app = (0, express_1.default)();
+app.use((0, cors_1.default)());
+app.use(express_1.default.json());
+app.get('/', (req, res) => {
+    res.send('API is working');
+});
+// Mount the routes
+app.use('/api/profile', Profile_route_1.default);
+app.use(express_1.default.static(path_1.default.join(__dirname, 'public')));
+app.use('/api/auth', Auth_route_1.default);
+app.use('/api/company', Company_route_1.default);
+app.use('/api/department', Department_route_1.default);
+app.use('/api/state', State_route_1.default);
+app.use('/api/employe', Employe_route_1.default);
+app.use('/api/attendance', Attendance_route_1.default);
+app.use('/api/exportAttendance', ExportAttendance_route_1.default);
+app.use('/api/leavemanagement', Leave_route_1.default);
+app.use('/api/payrolls', Payroll_route_1.default);
+app.use('/api/training', Training_route_1.default);
+app.use("/api/projects", Project_route_1.default);
+app.use("/api/time-entries", timeEntries_routes_1.default);
+app.use('/uploads', express_1.default.static(path_1.default.join(__dirname, '../uploads')));
+app.use("/api/dashboard", Dashboard_route_1.default);
+app.use("/api/AttendancePolicy", AttendancePolicyRoutes_1.default);
+exports.default = app;

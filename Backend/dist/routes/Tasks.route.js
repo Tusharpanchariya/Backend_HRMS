@@ -1,0 +1,10 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const router = (0, express_1.Router)();
+router.post('/', (_req, res) => res.status(501).json({ message: 'Tasks API not implemented' }));
+router.get('/', (_req, res) => res.status(501).json({ message: 'Tasks API not implemented' }));
+router.get('/:id', (_req, res) => res.status(501).json({ message: 'Tasks API not implemented' }));
+router.put('/:id', (_req, res) => res.status(501).json({ message: 'Tasks API not implemented' }));
+router.delete('/:id', (_req, res) => res.status(501).json({ message: 'Tasks API not implemented' }));
+exports.default = router;

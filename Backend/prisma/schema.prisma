@@ -1,0 +1,411 @@
+generator client {
+  provider = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String    @id @default(uuid())
+  name             String
+  email            String    @unique
+  password         String
+  phoneNumber      String    @unique
+  paymentStatus    String
+  resetToken       String?
+  resetTokenExpiry DateTime?
+
+  roles            Role[]    @relation("UserRoles") // Many-to-Many: User ↔ Role
+  employee         Employee?
+  profile          Profile?
+}
+
+model Role {
+  id          String       @id @default(uuid())
+  name        String       @unique // e.g., Admin, HR, Manager, Employee
+  description String?
+
+  users       User[]       @relation("UserRoles")     // Many-to-Many: Role ↔ User
+  permissions Permission[] @relation("RolePermissions") // Many-to-Many: Role ↔ Permission
+}
+
+model Permission {
+  id          String   @id @default(uuid())
+  action      String   // e.g., "create_attendance", "approve_leave"
+  description String?
+
+  roles       Role[]   @relation("RolePermissions") // Many-to-Many: Permission ↔ Role
+}
+model Profile {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  fullName  String
+  role      String
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model Company {
+  id       String    @id @default(uuid())
+  name     String
+  domain   String    @unique
+  size     String
+  industry String
+  category String
+  profiles Profile[]
+
+  
+
+  AttendancePolicy AttendancePolicy[]
+
+  Employee Employee[]
+}
+
+model Department {
+  id            Int        @id @default(autoincrement())
+  name          String     @unique
+  manager      String?
+  description   String?
+  location      String?      
+  establishDate DateTime?    
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  employees     Employee[]
+
+  Training      Training[]
+}
+
+model Employee {
+  id               Int            @id @default(autoincrement())
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  fullName         String
+  joiningDate      DateTime
+  contactNumber    String
+  email            String?        @unique
+  address          String?
+  city             String?
+  state            String?
+  pinCode          String?
+  dateOfBirth      DateTime?
+
+  departmentId     Int?
+  designation      String?
+  department       Department?    @relation(fields: [departmentId], references: [id])
+
+  userId           String?        @unique
+  user             User?          @relation(fields: [userId], references: [id])
+
+  status           EmployeeStatus @default(ACTIVE)
+  trainingStatus   TrainingStatus?
+  activeStatus     ActiveStatus   @default(ACTIVE) // ✅ separate active/inactive flag
+
+  emergencyContact String?
+  photo            String?
+  faceData         Json?       // JSON string (face embedding or Base64)
+
+  // Statutory & Bank Details (merged from EmployeeStatutoryDetails)
+
+  panNumber        String?        // optional
+  aadhaarNumber    String?        // optional
+  bankAccount      String?        // optional
+  bankName         String?        // already optional
+  ifscCode         String?        // optional
+  uanNumber        String?        // optional
+  esicNumber       String?        // optional
+  baseSalary       Float?         @default(0)  // already optional
+  // Relations
+  attendances      Attendance[]
+  leaves           Leave[]
+  Payroll          Payroll[]
+  Training         Training[]      @relation("EmployeeTrainings")
+  TimeEntry        TimeEntry[]
+  companyId String?   // make it optional
+  company   Company?  @relation(fields: [companyId], references: [id])
+
+
+  BirthdayLog BirthdayLog[]
+}
+
+
+enum ActiveStatus {
+  ACTIVE
+  INACTIVE
+}
+
+model Leave {
+  id             Int         @id @default(autoincrement())
+  employeeId     Int
+  startDate      DateTime
+  endDate        DateTime
+  leaveType      LeaveType
+  leaveReason    String
+  approvalStatus LeaveStatus @default(PENDING)
+  totalDays      Int
+  approvedBy     Int?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  employee       Employee    @relation(fields: [employeeId], references: [id])
+}
+
+
+model Attendance {
+  id              Int               @id @default(autoincrement())
+  employeeId      Int
+  status          AttendanceStatus
+  attendanceDate  DateTime          @db.Date
+  inTime          DateTime?
+  outTime         DateTime?
+  totalHours      Float?
+  overtimeHours   Float?
+  overtimeStatus  OvertimeStatus    @default(NONE)
+  isBiometric     Boolean           @default(false)
+  remarks         String?
+  latitude        Float?
+  longitude       Float?
+  faceData        Json?
+  location     String?   // <-- new field
+  // Link to applied policy
+  policyId        Int?
+  policy          AttendancePolicy? @relation(fields: [policyId], references: [id])
+
+  // Deduction type for payroll
+  deductionType   DeductionType     @default(NONE)
+
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  deduction       Float? 
+  employee        Employee          @relation(fields: [employeeId], references: [id])
+  Payroll         Payroll[]
+
+  @@index([employeeId])
+  @@index([attendanceDate])
+  @@unique([employeeId, attendanceDate])
+}
+
+enum DeductionType {
+  NONE
+  QUARTER_DAY
+  HALF_DAY
+  FULL_DAY
+}
+
+enum OvertimeStatus {
+  NONE
+  ELIGIBLE
+  PAID
+}
+model AttendancePolicy {
+  id                   Int       @id @default(autoincrement())
+  companyId            String    @unique
+  company              Company   @relation(fields: [companyId], references: [id])
+  // Office Timings
+  officeStartTime      String   // e.g. "10:00"
+  officeEndTime        String   // e.g. "18:30"
+
+  // Grace & Exceptions
+  gracePeriodMins      Int      @default(5)   // Allowed late minutes (10:05)
+  maxGraceExceptions   Int      @default(4)   // Only 4 per month (till 10:10)
+
+  // Late Arrival Rules
+  quarterDayLateStart  String?  // e.g. "10:05"
+  quarterDayLateEnd    String?  // e.g. "11:30"
+  halfDayLateAfter     String?  // e.g. "11:30"
+
+  // Early Leave Rules
+  quarterDayEarlyStart String?  // e.g. "17:00"
+  quarterDayEarlyEnd   String?  // e.g. "18:30"
+  halfDayEarlyBefore   String?  // e.g. "16:30"
+
+  // Break Rules
+  lunchBreakMins       Int      @default(20)
+
+  // Biometric & Timesheet
+  biometricRequired    Boolean  @default(true)
+  timesheetRequired    Boolean  @default(true)
+
+  // Deduction Mapping
+  deductionQuarterDay  Float    @default(0.25) // 1/4th day salary
+  deductionHalfDay     Float    @default(0.5)  // Half day salary
+  deductionFullDay     Float    @default(1.0)  // Full day salary
+
+  // Audit / Special Cases
+  allowAuditDirect     Boolean  @default(true) // If direct site attendance allowed
+  siteArrivalBy        String?  // e.g. "10:15"
+  siteLeaveAfter       String?  // e.g. "18:20"
+
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  Attendance Attendance[]
+}
+enum EmployeeType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+}
+
+enum EmployeeStatus {
+  ACTIVE
+  INACTIVE
+  RESIGNED
+  ON_LEAVE
+}
+
+enum TrainingStatus {
+  COMPLETED
+  IN_PROGRESS
+  NOT_STARTED
+  REQUIRED
+  NOT_REQUIRED
+}
+
+enum LeaveType {
+  SICK
+  CASUAL
+  EARNED
+  MATERNITY
+  PATERNITY
+}
+
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  HALF_DAY
+  LEAVE
+  HOLIDAY
+} 
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model Payroll {
+  id         Int      @id @default(autoincrement())
+  employee   Employee @relation(fields: [employeeId], references: [id])
+  employeeId Int
+
+  baseSalary     Float
+  allowances     Float @default(0)
+  deductions     Float @default(0)
+  bonus          Float @default(0)     
+  incentive      Float @default(0)       
+
+  advancePayment Float @default(0)
+
+  netSalary Float // Will be calculated in controller
+
+  paymentStatus PaymentStatus @default(PENDING)
+  paymentDate   DateTime? // Only filled when status = PAID
+
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  Attendance   Attendance? @relation(fields: [attendanceId], references: [id])
+  attendanceId Int?
+}
+model BirthdayLog {
+  id         String   @id @default(uuid())
+  employeeId Int
+  date       String   // store yyyy-mm-dd
+  createdAt  DateTime @default(now())
+
+  employee Employee @relation(fields: [employeeId], references: [id])
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+}
+
+model Training {
+  trainingId     Int       @id @default(autoincrement())
+  employeeId     Int
+  trainerType    TrainerType
+  trainerName    String    @db.VarChar(100)
+  mode           TrainingMode
+  trainingTopic  String
+  startDate      DateTime
+  endDate        DateTime
+  certificate    CertificateStatus
+  departmentId   Int?
+  departmentName String?
+  managerId      Int?
+
+  // Relations
+  employee       Employee  @relation("EmployeeTrainings", fields: [employeeId], references: [id])
+  department     Department? @relation(fields: [departmentId], references: [id])
+  // manager        Employee? @relation("ManagerTrainings", fields: [managerId], references: [id])
+
+  @@index([employeeId])
+  @@index([departmentId])
+  @@index([managerId])
+}
+
+enum TrainerType {
+  Internal
+  External
+}
+
+enum TrainingMode {
+  Online
+  Offline
+}
+
+enum CertificateStatus {
+  Required
+  NotRequired
+}
+
+model Project {
+  id          Int       @id @default(autoincrement())
+  name        String
+  description String?
+  startDate   DateTime
+  endDate     DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+
+  TimeEntry TimeEntry[]
+}
+
+model TimeEntry {
+  id          Int       @id @default(autoincrement())
+  employeeId  Int
+  projectId   Int
+  task        String?
+  date        DateTime
+  startTime   DateTime
+  endTime     DateTime
+  duration    Float
+  description String?
+
+  billable    Boolean   @default(true) // <-- New field
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  employee    Employee  @relation(fields: [employeeId], references: [id])
+  project     Project   @relation(fields: [projectId], references: [id])
+
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+ }
