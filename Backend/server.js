@@ -1,54 +1,30 @@
+require("dotenv").config();
 const express = require("express");
-const dotenv = require("dotenv");
-const { PrismaClient } = require("@prisma/client");
-
-dotenv.config();
+const cors = require("cors");
 
 const app = express();
-const prisma = new PrismaClient();
 
-const PORT = process.env.PORT || 5000;
-
-// Middleware to parse JSON
+// Middleware
 app.use(express.json());
 
-// Health check route
-app.get("/", async (_req, res) => {
-  try {
-    await prisma.$connect();
-    res.send("Backend is live ✅ Database connected ✅");
-    console.log("Backend is live and database connected ✅");
-  } catch (err) {
-    console.error("Database connection error:", err);
-    res.status(500).send("Database connection failed ❌");
-  }
+// CORS setup
+app.use(cors({
+  origin: process.env.FRONTEND_URL,
+  credentials: true
+}));
+
+// Routes
+const authRoutes = require("./src/middleware/a.routes.ts"); // match case exactly
+app.use("/api/auth", authRoutes);
+
+// Health check
+app.get("/", (req, res) => {
+  res.send("Backend is live Database connected ✅");
 });
 
-// Example: Attach your routes here
-// const leaveRoutes = require("./dist/routes/leave.route");
-// app.use("/api/leaves", leaveRoutes);
-
-// Automatically run migrations on server start (optional)
-async function migrateDatabase() {
-  try {
-    console.log("Running database migrations...");
-    const { exec } = require("child_process");
-    exec("npx prisma migrate deploy", (err, stdout, stderr) => {
-      if (err) {
-        console.error("Migration error:", err);
-        return;
-      }
-      if (stderr) console.error(stderr);
-      console.log(stdout);
-      console.log("Database migrations complete ✅");
-    });
-  } catch (err) {
-    console.error("Migration failed:", err);
-  }
-}
-
-// Start server and connect DB
-app.listen(PORT, async () => {
+// Port (Render requires process.env.PORT)
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
-  await migrateDatabase();
 });
+  

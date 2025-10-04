@@ -1,4 +1,5 @@
 import express from 'express';
+// Add .js at the end for ESM module resolution in production
 import {
   register,
   login,
@@ -7,8 +8,8 @@ import {
   changePassword,
   deleteUser
 } from '../controllers/Auth.controller';
-import { verifyToken } from '../middleware/auth.middleware';
-import { authorizeRoles } from '../middleware/role.middlewere';
+import { verifyToken } from './auth.middleware';
+import { authorizeRoles } from './role.middlewere.js';
 
 const router = express.Router();
 

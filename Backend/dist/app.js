@@ -8,7 +8,7 @@ const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const Profile_route_1 = __importDefault(require("./routes/Profile.route"));
-const Auth_route_1 = __importDefault(require("./routes/Auth.route"));
+const a_routes_1 = __importDefault(require("./middleware/a.routes"));
 const Company_route_1 = __importDefault(require("./routes/Company.route"));
 const Department_route_1 = __importDefault(require("./routes/Department.route"));
 const State_route_1 = __importDefault(require("./routes/State.route"));
@@ -33,7 +33,7 @@ app.get('/', (req, res) => {
 // Mount the routes
 app.use('/api/profile', Profile_route_1.default);
 app.use(express_1.default.static(path_1.default.join(__dirname, 'public')));
-app.use('/api/auth', Auth_route_1.default);
+app.use('/api/auth', a_routes_1.default);
 app.use('/api/company', Company_route_1.default);
 app.use('/api/department', Department_route_1.default);
 app.use('/api/state', State_route_1.default);

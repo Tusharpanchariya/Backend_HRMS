@@ -15,5 +15,5 @@ router.delete('/:id', auth_middleware_1.verifyToken, Auth_controller_1.deleteUse
 router.post('/login', Auth_controller_1.login);
 router.post('/forgot-password', Auth_controller_1.forgotPassword);
 router.post('/change-password', auth_middleware_1.verifyToken, Auth_controller_1.changePassword);
-router.post('/reset-password', Auth_controller_1.resetPassword); // ✅ protected
+router.post('/reset-password', Auth_controller_1.resetPassword);
 exports.default = router;

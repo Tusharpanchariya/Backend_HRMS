@@ -12,7 +12,7 @@ const mailer_1 = require("../utils/mailer");
 const role_middlewere_1 = require("../middleware/role.middlewere");
 const prisma = new client_1.PrismaClient();
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecretkey';
-const BACKEND_URL = process.env.BACKEND_URL |
+const BACKEND_URL = process.env.BACKEND_URL;
 const generatePassword = (length = 10) => {
     const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$!&*';
     return Array.from({ length }, () => chars[Math.floor(Math.random() * chars.length)]).join('');

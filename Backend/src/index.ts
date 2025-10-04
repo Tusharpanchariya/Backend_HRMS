@@ -1,9 +1,9 @@
 // File: src/index.ts
-import app from './app';
 import dotenv from 'dotenv';
-import '../src/cron/birthdayJob';
+dotenv.config(); // load env first
 
-dotenv.config();
+import app from './app';
+import './cron/birthdayJob';
 
 const PORT = process.env.PORT || 5000;
 

@@ -3,7 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import profileRoutes from './routes/Profile.route';
-import authRoutes from './routes/Auth.route';
+import authRoutes from './middleware/a.routes';
 import companyRoutes from './routes/Company.route'; 
 import departmentRoutes from './routes/Department.route';
 import stateRoutes from './routes/State.route';

@@ -1,20 +1,17 @@
 {
   "name": "backend",
   "version": "1.0.0",
-  "main": "index.ts",
+  "main": "dist/index.js",
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
-     "build": "tsc && chmod +x ./node_modules/.bin/prisma && npx prisma generate",
-    "start": "node server.js",
+    "build": "tsc && npx prisma generate",
+    "start": "node dist/index.js",
     "prisma:generate": "npx --no-install prisma generate",
     "prisma:migrate": "npx --no-install prisma migrate deploy"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
   "dependencies": {
     "@prisma/client": "^6.16.3",
+    "@sendgrid/mail": "^8.1.6",
     "axios": "^1.11.0",
     "bcrypt": "^6.0.0",
     "bwip-js": "^4.7.0",

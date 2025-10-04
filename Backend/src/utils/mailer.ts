@@ -2,60 +2,51 @@ import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
 dotenv.config();
 
-const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_HOST,
-  port: Number(process.env.EMAIL_PORT),
-  secure: false, // true for 465, false for 587
+// ------------------------
+// Create transporter using SendGrid Web API
+// ------------------------
+export const transporter = nodemailer.createTransport({
+  service: 'SendGrid',
   auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
+    api_key: process.env.EMAIL_PASS as string, // SendGrid API Key
+  } as any, // nodemailer SendGrid typing workaround
 });
 
-/**
- * Sends login credentials email to newly registered users.
- * @param to - Recipient email address
- * @param name - User's name
- * @param password - Auto-generated password
- */
-export const sendCredentialsEmail = async (
-  to: string,
-  name: string,
-  password: string
-) => {
+// ------------------------
+// Connection check (API doesn’t support verify())
+// ------------------------
+console.log("SendGrid transporter ready ✅");
+
+// ------------------------
+// Send credentials email
+// ------------------------
+export const sendCredentialsEmail = async (to: string, name: string, password: string) => {
   const mailOptions = {
-    from: `"HRMS Team" <${process.env.EMAIL_USER}>`,
+    from: `"HRMS Team" <${process.env.EMAIL_FROM}>`, // must be verified sender in SendGrid
     to,
     subject: 'Welcome to HRMS - Your Login Credentials',
-    html: `
-      <div style="font-family: Arial, sans-serif; padding: 20px;">
-        <h2 style="color: #333;">Hi ${name},</h2>
-        <p>Welcome to <strong>HRMS Platform</strong>! Your account has been successfully created.</p>
-        
-        <h4 style="margin-top: 20px;">Here are your login credentials:</h4>
-        <ul style="background-color: #f4f4f4; padding: 15px; border-radius: 6px;">
-          <li><strong>Email:</strong> ${to}</li>
-          <li><strong>Password:</strong> ${password}</li>
-        </ul>
-
-        <p style="margin-top: 20px;">Please login and change your password after your first login for better security.</p>
-
-        <p>Best regards,<br/>HRMS Team</p>
-      </div>
-    `,
+    html: `<div>Hi ${name}, your password is <strong>${password}</strong></div>`,
   };
 
-  await transporter.sendMail(mailOptions);
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log(`Credentials email sent to ${to} ✅`);
+  } catch (err) {
+    console.error(`Failed to send credentials email to ${to} ❌`, err);
+  }
 };
 
-/**
- * Sends leave status update email to employee
- * @param to - Recipient email address
- * @param name - Employee's name
- * @param status - Leave status ("APPROVED" | "REJECTED")
- */
+// ------------------------
+// Send leave status email
+// ------------------------
 export const sendLeaveStatusEmail = async (
-to: string, name: string, status: 'APPROVED' | 'REJECTED', startDate: Date, endDate: Date, leaveReason: any) => {
+  to: string,
+  name: string,
+  status: 'APPROVED' | 'REJECTED',
+  startDate: Date,
+  endDate: Date,
+  leaveReason?: string
+) => {
   const subject =
     status === 'APPROVED'
       ? 'Your Leave Request has been Approved'
@@ -67,25 +58,31 @@ to: string, name: string, status: 'APPROVED' | 'REJECTED', startDate: Date, endD
       : 'Your leave request has been rejected. Thank you.';
 
   const mailOptions = {
-    from: `"HRMS Team" <${process.env.EMAIL_USER}>`,
+    from: `"HRMS Team" <${process.env.EMAIL_FROM}>`,
     to,
     subject,
     html: `
       <div style="font-family: Arial, sans-serif; padding: 20px;">
         <h2 style="color: #333;">Hi ${name},</h2>
         <p>${message}</p>
+        <p><strong>Leave Period:</strong> ${startDate.toDateString()} - ${endDate.toDateString()}</p>
+        ${leaveReason ? `<p><strong>Reason:</strong> ${leaveReason}</p>` : ""}
         <p>Best regards,<br/>HRMS Team</p>
       </div>
     `,
   };
 
-  await transporter.sendMail(mailOptions);
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log(`Leave status email sent to ${to} ✅`);
+  } catch (err) {
+    console.error(`Failed to send leave status email to ${to} ❌`, err);
+  }
 };
-/**
- * Sends birthday wishes to an employee
- * @param to - Employee's personal email
- * @param name - Employee's full name
- */
+
+// ------------------------
+// Send birthday email
+// ------------------------
 export const sendBirthdayEmail = async (to: string, name: string) => {
   const subject = `🎉 Happy Birthday ${name}! 🎂`;
   const html = `
@@ -97,10 +94,15 @@ export const sendBirthdayEmail = async (to: string, name: string) => {
     </div>
   `;
 
-  await transporter.sendMail({
-    from: `"HRMS Team" <${process.env.EMAIL_USER}>`,
-    to,
-    subject,
-    html,
-  });
+  try {
+    await transporter.sendMail({
+      from: `"HRMS Team" <${process.env.EMAIL_FROM}>`,
+      to,
+      subject,
+      html,
+    });
+    console.log(`Birthday email sent to ${to} ✅`);
+  } catch (err) {
+    console.error(`Failed to send birthday email to ${to} ❌`, err);
+  }
 };
